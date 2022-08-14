@@ -4,11 +4,14 @@ import { connect } from "react-redux";
 import "./UserManage.scss";
 import { getAllUsers } from "../../services/userService";
 import ModalUser from "./ModalUser";
+import ModalEditUser from "./ModalEditUser";
 import {
   createNewUserService,
   deleteUserService,
+  editUserService,
 } from "../../services/userService";
 import { emitter } from "../../utils/emitter";
+import _ from "lodash";
 
 class UserManage extends Component {
   constructor(props) {
@@ -16,6 +19,8 @@ class UserManage extends Component {
     this.state = {
       arrUsers: [],
       isOpenModal: false,
+      isOpenModalEditUser: false,
+      userEdit: {},
     };
   }
 
@@ -74,6 +79,35 @@ class UserManage extends Component {
     }
   };
 
+  handleEditUser = (user) => {
+    this.setState({
+      isOpenModalEditUser: true,
+      userEdit: user,
+    });
+  };
+
+  toggleUserEditUser = () => {
+    this.setState({
+      isOpenModalEditUser: !this.state.isOpenModalEditUser,
+    });
+  };
+
+  doEditUser = async (user) => {
+    try {
+      let response = await editUserService(user);
+      if (response && response.errCode === 0) {
+        this.setState({
+          isOpenModalEditUser: false,
+        });
+        this.getAllUsersFromReact();
+      } else {
+        alert(response.errCode);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   render() {
     let arrUsers = this.state.arrUsers;
     return (
@@ -83,6 +117,14 @@ class UserManage extends Component {
           toggle={this.toggle}
           createNewUser={this.createNewUser}
         />
+        {this.state.isOpenModalEditUser && (
+          <ModalEditUser
+            isOpen={this.state.isOpenModalEditUser}
+            toggle={this.toggleUserEditUser}
+            currentUser={this.state.userEdit}
+            editUser={this.doEditUser}
+          />
+        )}
         <div className="title text-center">Manager users with Harry</div>
         <div className="mx-1">
           <button
@@ -112,7 +154,10 @@ class UserManage extends Component {
                         <td>{item.lastName}</td>
                         <td>{item.address}</td>
                         <td className="w-25">
-                          <button className="btn-edit">
+                          <button
+                            className="btn-edit"
+                            onClick={() => this.handleEditUser(item)}
+                          >
                             <i className="fas fa-pencil-alt"></i>
                           </button>
                           <button
